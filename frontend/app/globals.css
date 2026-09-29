@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 224 22% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 224 22% 12%;
+  --muted: 220 16% 96%;
+  --muted-foreground: 220 10% 40%;
+  --primary: 224 47% 18%;
+  --primary-foreground: 0 0% 98%;
+  --accent: 244 76% 60%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 72% 45%;
+  --destructive-foreground: 0 0% 98%;
+  --success: 152 55% 36%;
+  --warning: 34 92% 44%;
+  --border: 220 14% 89%;
+  --input: 220 14% 89%;
+  --ring: 244 76% 60%;
+  --radius: 0.65rem;
+  --font-mono: "SFMono-Regular", "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+}
+
+.dark {
+  --background: 230 25% 6%;
+  --foreground: 220 18% 90%;
+  --card: 230 22% 9%;
+  --card-foreground: 220 18% 92%;
+  --muted: 230 18% 14%;
+  --muted-foreground: 220 12% 58%;
+  --primary: 220 18% 92%;
+  --primary-foreground: 230 25% 8%;
+  --accent: 248 90% 68%;
+  --accent-foreground: 230 25% 6%;
+  --destructive: 0 64% 55%;
+  --destructive-foreground: 0 0% 98%;
+  --success: 152 52% 50%;
+  --warning: 34 92% 58%;
+  --border: 230 15% 18%;
+  --input: 230 15% 20%;
+  --ring: 248 90% 68%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
