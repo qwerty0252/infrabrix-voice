@@ -8,7 +8,8 @@ Saying "yes" never changes anything.
 Built on the [AssemblyAI Voice Agent API](https://www.assemblyai.com/) for the AssemblyAI Voice Agent
 Hackathon (lablab.ai, September 2026).
 
-This repository is the open-source voice layer of **InfraBrix**, an autonomous DevOps product. The
+This repository is the open-source voice layer of **[InfraBrix](https://infrabrix.enylabs.com/)**, an
+autonomous DevOps product. The
 voice pipeline, agent runtime, policy engine, approval gate and audit trail here are the real design.
 The cloud they operate on is **simulated**, so anyone can run the full demo locally with one API key.
 
@@ -140,6 +141,11 @@ docs/architecture.md
 The InfraBrix product also does repository analysis, architecture design, cost modelling, Terraform
 generation and apply, CI/CD, and real AWS/GCP operations. None of that is in this repository.
 `democloud.py` stands in for all of it behind the same tool interface.
+
+## See it in the product
+
+The same voice layer runs inside InfraBrix against real AWS infrastructure:
+[infrabrix.enylabs.com](https://infrabrix.enylabs.com/).
 
 ## License
 

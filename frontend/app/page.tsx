@@ -104,7 +104,11 @@ export default function Home() {
       )}
 
       <footer className="pt-4 text-center text-xs text-muted-foreground">
-        The voice layer of InfraBrix, running against a simulated cloud. Apache-2.0.
+        The voice layer of{" "}
+        <a href="https://infrabrix.enylabs.com/" className="underline hover:text-foreground">
+          InfraBrix
+        </a>
+        , running against a simulated cloud. Apache-2.0.
       </footer>
     </main>
   );
