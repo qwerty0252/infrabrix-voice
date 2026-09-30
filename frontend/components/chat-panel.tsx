@@ -16,7 +16,7 @@ type PendingApproval = {
 
 const SUGGESTIONS = [
   "What's wrong with production?",
-  "Roll checkout back to the last good release",
+  "Roll the API back to the last good release",
   "How much are we spending this month?",
 ];
 

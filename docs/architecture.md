@@ -74,8 +74,8 @@ conversation, never in telemetry.
 
 ## Simulated cloud
 
-`backend/app/democloud.py` gives each visitor a private, stateful environment: three services, a
-release history, an incident introduced by the latest checkout release, matching metrics and logs,
+`backend/app/democloud.py` gives each visitor a private, stateful environment: four services, a
+release history, an incident introduced by the latest `ria-api` release, matching metrics and logs,
 a cost summary, and a rollback that completes after `INFRABRIX_DEMO_ROLLBACK_SECONDS`. The tools in
 `agent/tools.py` are the only code that touches it. In the InfraBrix product, the same tool
 interface is backed by real cloud providers.

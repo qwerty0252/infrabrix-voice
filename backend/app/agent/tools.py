@@ -20,7 +20,7 @@ class _NoArgs(BaseModel):
 
 class _ServiceArgs(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    service: str = Field(description="Service name, e.g. checkout-api")
+    service: str = Field(description="Service name, e.g. ria-api")
 
 
 class _OptionalServiceArgs(BaseModel):

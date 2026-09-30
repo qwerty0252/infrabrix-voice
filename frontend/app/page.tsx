@@ -27,13 +27,16 @@ export default function Home() {
   const [cloud, setCloud] = useState<CloudState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [health, setHealth] = useState<{ llm_provider: string; voice_configured: boolean } | null>(null);
+  const [voiceReady, setVoiceReady] = useState(true);
 
   useEffect(() => {
     ensureSignedIn()
       .then(setMe)
       .catch(() => setError("Could not reach the InfraBrix Voice backend. Is it running on port 8000?"));
-    api.health().then(setHealth).catch(() => undefined);
+    api
+      .health()
+      .then((h) => setVoiceReady(h.voice_configured))
+      .catch(() => undefined);
   }, []);
 
   const refresh = useCallback(() => {
@@ -51,12 +54,6 @@ export default function Home() {
     return () => clearInterval(timer);
   }, [me, refresh]);
 
-  const reset = async () => {
-    if (!me) return;
-    await api.resetCloud(me.project_id);
-    refresh();
-  };
-
   return (
     <main className="mx-auto flex min-h-screen max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -71,17 +68,16 @@ export default function Home() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone="accent">AssemblyAI Voice Agent API</Badge>
-          {health && <Badge>planner: {health.llm_provider}</Badge>}
-          {health && !health.voice_configured && <Badge tone="warning">voice key not set</Badge>}
+          {!voiceReady && <Badge tone="warning">voice key not set</Badge>}
         </div>
       </header>
 
       {error && <p className="rounded-lg border border-destructive/40 p-3 text-sm text-destructive">{error}</p>}
 
       <p className="max-w-3xl text-sm text-muted-foreground">
-        Your checkout service started failing after the last deploy. Press <em>Start Voice Mode</em> and ask Brix
-        what&apos;s wrong. It investigates with typed tools, proposes a fix, and waits for you to approve it on
-        screen. Saying &ldquo;yes&rdquo; out loud never changes anything.
+        RIA&apos;s API started failing right after the last deploy, and meeting uploads are timing out. Press{" "}
+        <em>Start Voice Mode</em> and ask Brix what&apos;s wrong. It investigates with typed tools, proposes a fix,
+        and waits for you to approve it on screen. Saying &ldquo;yes&rdquo; out loud never changes anything.
       </p>
 
       {me?.conversation_id ? (
@@ -96,7 +92,7 @@ export default function Home() {
             />
           </div>
           <div className="lg:col-span-5">
-            <CloudPanel cloud={cloud} onReset={() => void reset()} />
+            <CloudPanel cloud={cloud} />
           </div>
         </div>
       ) : (

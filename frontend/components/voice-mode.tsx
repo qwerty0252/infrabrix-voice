@@ -559,9 +559,9 @@ export function VoiceMode({ projectId, conversationId, onTurn }: VoiceModeProps)
           )}
         </div>
       )}
-      <div className="relative grid gap-3 border-t border-border bg-background/50 px-4 py-4 sm:grid-cols-2 sm:px-6">
+      <div className="relative grid gap-3 border-t border-border bg-background/50 px-4 py-4 sm:grid-cols-[2fr_3fr] sm:px-6">
         <VoiceTranscript label="You" text={lastUserText || latestTranscript(transcript, "You:")} accent />
-        <VoiceTranscript label="Brix" text={lastAssistantText || latestTranscript(transcript, "Brix:")} />
+        <VoiceTranscript label="Brix" text={lastAssistantText || latestTranscript(transcript, "Brix:")} prominent />
       </div>
       <div className="relative flex flex-col items-center gap-2 border-t border-border px-4 py-4 sm:flex-row sm:justify-center">
         {active ? (
@@ -584,11 +584,30 @@ function latestTranscript(items: string[], prefix: string): string {
   return value?.slice(prefix.length).trim() ?? "";
 }
 
-function VoiceTranscript({ label, text, accent = false }: { label: string; text: string; accent?: boolean }) {
+function VoiceTranscript({
+  label,
+  text,
+  accent = false,
+  prominent = false,
+}: {
+  label: string;
+  text: string;
+  accent?: boolean;
+  prominent?: boolean;
+}) {
   return (
-    <div className={`min-h-16 rounded-xl border p-3 text-left ${accent ? "border-accent/30 bg-accent/5" : "border-border bg-card/60"}`}>
+    <div
+      className={`rounded-xl border p-4 text-left ${accent ? "border-accent/30 bg-accent/5" : "border-border bg-card/60"} ${prominent ? "min-h-36" : "min-h-20"}`}
+    >
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-1 line-clamp-3 text-sm leading-5 text-foreground">
+      <p
+        aria-live={prominent ? "polite" : undefined}
+        className={
+          prominent
+            ? "mt-2 max-h-56 overflow-y-auto text-base leading-7 text-foreground"
+            : "mt-2 line-clamp-4 text-sm leading-6 text-foreground"
+        }
+      >
         {text || (label === "You" ? "Your spoken request will appear here." : "Brix’s spoken response will appear here.")}
       </p>
     </div>

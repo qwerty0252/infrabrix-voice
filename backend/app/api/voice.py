@@ -14,6 +14,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 
+from app import ratelimit
 from app.agent import voice_approvals
 from app.agent.registry import ToolContext
 from app.agent.runtime import AgentRuntime
@@ -120,6 +121,7 @@ async def _issue_session(
     event: str,
     extra: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    ratelimit.check_voice_session(user.id)
     row = await VoiceSessionRepository(session).create(
         project_id=project.id, conversation_id=conversation_id, user_id=user.id
     )
@@ -242,6 +244,7 @@ async def execute_voice_turn(
     conversation = await ConversationRepository(session).get(voice_session.conversation_id)
     if conversation is None or conversation.project_id != project.id:
         raise NotFoundError("Conversation not found")
+    ratelimit.check_turn(user.id)
     turn = await turns.create(voice_session_id=voice_session.id, provider_call_id=body.call_id)
     runtime = AgentRuntime(
         session=session,

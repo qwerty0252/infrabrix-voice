@@ -52,11 +52,11 @@ async def test_turn_requires_connected_session(alice: Visitor) -> None:
 
 async def test_read_turn_runs_canonical_agent(alice: Visitor) -> None:
     sid = await alice.start_voice()
-    r = await alice.say(sid, "What's wrong with checkout?", "c1")
+    r = await alice.say(sid, "What's wrong with the API?", "c1")
     assert r.status_code == 200, r.text
     result = r.json()
     assert result["status"] == "completed"
-    assert "v42" in result["speech_text"]
+    assert "v24" in result["speech_text"]
     assert result["approval"] is None
     assert [e["tool"] for e in result["display"]] == ["diagnose_incident", "diagnose_incident"]
 

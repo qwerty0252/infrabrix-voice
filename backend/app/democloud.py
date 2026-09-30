@@ -23,9 +23,9 @@ from app.models import Deployment, DeploymentStatus, Project
 from app.repositories import DeploymentRepository
 from app.settings import get_settings
 
-INCIDENT_SERVICE = "checkout-api"
-BAD_VERSION = "v42"
-GOOD_VERSION = "v41"
+INCIDENT_SERVICE = "ria-api"
+BAD_VERSION = "v24"
+GOOD_VERSION = "v23"
 
 
 def _ago(now: datetime, minutes: float) -> str:
@@ -33,57 +33,72 @@ def _ago(now: datetime, minutes: float) -> str:
 
 
 def seed_state(now: datetime | None = None) -> dict[str, Any]:
+    """RIA, a meeting-intelligence app: web app, API, transcription worker, database."""
     now = now or utcnow()
     return {
         "region": "us-east-1",
         "services": {
-            "checkout-api": {
-                "kind": "Container service (ECS Fargate, 4 tasks)",
+            "ria-api": {
+                "kind": "FastAPI service (ECS Fargate, 3 tasks)",
                 "current_version": BAD_VERSION,
                 "status": "degraded",
             },
-            "storefront": {
-                "kind": "Static site (S3 + CloudFront)",
-                "current_version": "v18",
+            "ria-web": {
+                "kind": "Next.js web app (ECS Fargate, 2 tasks)",
+                "current_version": "v31",
                 "status": "healthy",
             },
-            "orders-db": {
+            "ria-transcriber": {
+                "kind": "Whisper transcription worker (ECS Fargate, 2 tasks)",
+                "current_version": "v12",
+                "status": "healthy",
+            },
+            "ria-db": {
                 "kind": "PostgreSQL 16 (RDS, Multi-AZ)",
                 "current_version": "16.4",
                 "status": "healthy",
             },
         },
         "releases": {
-            "checkout-api": [
+            "ria-api": [
                 {
-                    "version": "v40",
+                    "version": "v22",
                     "deployed_at": _ago(now, 60 * 72),
                     "commit": "4be0d17",
-                    "message": "Add idempotency keys to order submission",
-                    "author": "maya",
+                    "message": "Extract decisions and action items from transcripts",
+                    "author": "enyinna",
                 },
                 {
                     "version": GOOD_VERSION,
                     "deployed_at": _ago(now, 60 * 26),
-                    "commit": "c77a2e9",
-                    "message": "Tune checkout retry budget",
-                    "author": "dev",
+                    "commit": "b5243f1",
+                    "message": "Add Google Meet bot integration",
+                    "author": "enyinna",
                 },
                 {
                     "version": BAD_VERSION,
                     "deployed_at": _ago(now, 18),
                     "commit": "a91f3c2",
-                    "message": "Switch payment client to pooled async HTTP",
+                    "message": "Stream transcript uploads through a shared DB session pool",
                     "author": "ci-bot",
                 },
             ],
-            "storefront": [
+            "ria-web": [
                 {
-                    "version": "v18",
+                    "version": "v31",
                     "deployed_at": _ago(now, 60 * 50),
-                    "commit": "9d01b55",
-                    "message": "Holiday banner",
-                    "author": "maya",
+                    "commit": "88e44ea",
+                    "message": "Meeting analytics dashboard",
+                    "author": "enyinna",
+                },
+            ],
+            "ria-transcriber": [
+                {
+                    "version": "v12",
+                    "deployed_at": _ago(now, 60 * 98),
+                    "commit": "3c9d2aa",
+                    "message": "Speaker labels with color-coded segments",
+                    "author": "enyinna",
                 },
             ],
         },
@@ -131,8 +146,10 @@ def overview(state: dict[str, Any]) -> dict[str, Any]:
 
 
 def _headline_metrics(state: dict[str, Any], service: str) -> dict[str, Any]:
-    if service == "orders-db":
-        return {"cpu_percent": 31, "connections": 88}
+    if service == "ria-db":
+        return {"cpu_percent": 34, "connections": 96}
+    if service == "ria-transcriber":
+        return {"error_rate_percent": 0.1, "p95_latency_ms": 41000, "requests_per_min": 14}
     if _broken(state, service):
         return {"error_rate_percent": 14.2, "p95_latency_ms": 2840, "requests_per_min": 1920}
     if service == INCIDENT_SERVICE:
@@ -146,7 +163,7 @@ def service_metrics(state: dict[str, Any], service: str) -> dict[str, Any] | Non
     current = _headline_metrics(state, service)
     series = []
     if service == INCIDENT_SERVICE:
-        # Six five-minute buckets. The spike begins right after the v42 deploy.
+        # Six five-minute buckets. The spike begins right after the bad deploy.
         spike = _broken(state, service)
         for i, minutes in enumerate([30, 25, 20, 15, 10, 5]):
             bad = spike and minutes <= 15
@@ -173,12 +190,15 @@ def recent_errors(state: dict[str, Any], service: str) -> list[dict[str, Any]]:
     return [
         {
             "count": 1284,
-            "message": "PoolTimeout: timed out acquiring connection from payment client pool",
+            "message": (
+                "QueuePool limit of size 5 overflow 10 reached, "
+                "connection timed out on POST /meetings/{id}/transcript"
+            ),
             "first_seen_minutes_ago": 15,
         },
         {
             "count": 212,
-            "message": "HTTP 504 from upstream payments-gateway after 2500ms",
+            "message": "HTTP 504 from ria-transcriber callback after 30000ms",
             "first_seen_minutes_ago": 15,
         },
     ]
@@ -249,15 +269,15 @@ def cost_summary() -> dict[str, Any]:
         "forecast_month_end": 781.0,
         "last_month": 702.15,
         "top_services": [
-            {"name": "ECS Fargate (checkout-api)", "month_to_date": 148.20},
-            {"name": "RDS (orders-db)", "month_to_date": 121.66},
-            {"name": "NAT Gateway", "month_to_date": 74.90},
-            {"name": "CloudFront + S3 (storefront)", "month_to_date": 22.41},
+            {"name": "ECS Fargate (ria-transcriber)", "month_to_date": 171.80},
+            {"name": "RDS (ria-db)", "month_to_date": 118.66},
+            {"name": "ECS Fargate (ria-api, ria-web)", "month_to_date": 89.50},
+            {"name": "NAT Gateway", "month_to_date": 32.41},
         ],
-        "anomaly": "NAT Gateway data processing is up 38% week over week.",
+        "anomaly": "ria-transcriber compute is up 41% week over week as meeting uploads grow.",
         "headline": (
             "You've spent about $412 this month and are on track for $781, "
-            "roughly 11% over last month, mostly from NAT Gateway traffic."
+            "roughly 11% over last month, mostly from the transcription workers."
         ),
     }
 

@@ -58,6 +58,13 @@ class Settings(BaseSettings):
     # A parked voice approval can only be confirmed for this long.
     voice_approval_ttl_seconds: int = 600
 
+    # Abuse limits for a publicly hosted demo. 0 disables a limit.
+    trust_proxy_headers: bool = False
+    limit_signins_per_ip_per_hour: int = 20
+    limit_voice_sessions_per_user_per_hour: int = 10
+    limit_voice_sessions_per_day: int = 300
+    limit_turns_per_user_per_hour: int = 120
+
     # How long a simulated rollback deployment takes to finish.
     demo_rollback_seconds: float = 8.0
 

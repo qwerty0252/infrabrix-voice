@@ -13,7 +13,7 @@ from tests.conftest import Visitor
 
 async def _propose_rollback(v: Visitor) -> tuple[str, str]:
     sid = await v.start_voice()
-    r = await v.say(sid, "Roll checkout back to v41", "c-rollback")
+    r = await v.say(sid, "Roll the API back to v23", "c-rollback")
     assert r.status_code == 200, r.text
     result = r.json()
     assert result["status"] == "pending"
@@ -27,8 +27,8 @@ async def _propose_rollback(v: Visitor) -> tuple[str, str]:
 async def test_spoken_rollback_is_parked_not_executed(alice: Visitor) -> None:
     await _propose_rollback(alice)
     cloud = await alice.cloud()
-    checkout = next(s for s in cloud["overview"]["services"] if s["name"] == "checkout-api")
-    assert checkout["current_version"] == "v42"
+    api = next(s for s in cloud["overview"]["services"] if s["name"] == "ria-api")
+    assert api["current_version"] == "v24"
     assert cloud["deployments"] == []
 
 
@@ -48,9 +48,9 @@ async def test_approve_runs_rollback_and_reports_recovery(alice: Visitor) -> Non
     assert status["recovery"]["state"] == "recovered"
 
     cloud = await alice.cloud()
-    checkout = next(s for s in cloud["overview"]["services"] if s["name"] == "checkout-api")
-    assert checkout["current_version"] == "v41"
-    assert checkout["status"] == "healthy"
+    api = next(s for s in cloud["overview"]["services"] if s["name"] == "ria-api")
+    assert api["current_version"] == "v23"
+    assert api["status"] == "healthy"
     assert cloud["incident"]["resolved_at"] is not None
     assert "voice.approval.approved" in {a["action"] for a in cloud["audit"]}
 
@@ -134,7 +134,7 @@ async def test_redacted_arguments_are_never_executed(alice: Visitor) -> None:
 
 async def test_typed_chat_uses_the_same_gate(alice: Visitor) -> None:
     chat = f"/projects/{alice.project_id}/conversations/{alice.conversation_id}"
-    r = await alice.post(f"{chat}/messages", {"content": "please roll back checkout"})
+    r = await alice.post(f"{chat}/messages", {"content": "please roll back the api"})
     result = r.json()
     assert result["status"] == "pending"
     action_id = result["approval"]["action_id"]

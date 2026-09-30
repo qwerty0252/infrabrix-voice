@@ -15,17 +15,19 @@ The cloud they operate on is **simulated**, so anyone can run the full demo loca
 
 ## The demo
 
-Your `checkout-api` started failing after the last deploy.
+The demo project is **RIA**, a meeting-intelligence app: a Next.js web app, a FastAPI API, a Whisper
+transcription worker and Postgres. `ria-api` started failing right after its last deploy, and
+meeting uploads are timing out.
 
 1. Press **Start Voice Mode** and ask *"What's wrong with production?"*
-2. Brix runs `diagnose_incident`, correlates the error spike with release `v42` ("Switch payment
-   client to pooled async HTTP"), and says so.
+2. Brix runs `diagnose_incident`, correlates the error spike with release `v24` ("Stream transcript
+   uploads through a shared DB session pool"), and says so.
 3. Say *"Roll it back."* Brix prepares `rollback_release`, which is parked, not executed. An
    **Approve / Deny** card appears.
 4. Click **Approve**. The rollback deploys, the card tracks recovery, and the service panel goes
    green. Every step is in the audit trail.
-5. Ask *"How much are we spending this month?"* to see a cost anomaly. **Reset demo** replays the
-   incident.
+5. Ask *"How much are we spending this month?"* to see a cost anomaly. `/admin` has a **Reset demo**
+   button that replays the incident.
 
 There's no microphone requirement: the typed chat under the orb uses the same runtime, the same
 conversation, and the same approval gate.
@@ -78,6 +80,7 @@ covered by tests in `backend/tests/`:
 | Parked arguments are re-validated against the tool schema; redacted values are never executed | `voice_approvals.decide` |
 | Provider tool calls are idempotent per `call_id` | `VoiceTurnRepository` |
 | Ended sessions can't run turns or be resumed | `api/voice.py` |
+| Public-demo abuse limits: sign-ins per IP, voice sessions per user and per day, turns per user | `ratelimit.py` |
 | Telemetry accepts event codes only (`^[a-z0-9_.-]+$`). Transcripts are never written to audit | `api/schemas.py` |
 | Secret-shaped values in tool args, results, or replies stop the run | `agent/guardrails.py` |
 
@@ -113,7 +116,7 @@ key. Either way, calls go through the same runtime, policies, approval gate and 
 ## Tests
 
 ```bash
-cd backend && pytest -q        # 34 tests: voice lifecycle, isolation, approvals, planner
+cd backend && pytest -q        # 36 tests: voice lifecycle, isolation, approvals, planner
 cd frontend && npm run typecheck && npm run build
 ```
 

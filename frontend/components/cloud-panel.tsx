@@ -1,9 +1,8 @@
 "use client";
 
-import { Activity, GitCommit, RotateCcw, ScrollText } from "lucide-react";
+import { Activity, GitCommit, ScrollText } from "lucide-react";
 import type { CloudState, Service } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const STATUS_TONE: Record<Service["status"], "success" | "destructive" | "warning"> = {
@@ -20,21 +19,17 @@ function ago(iso: string): string {
   return hours < 48 ? `${hours}h ago` : `${Math.round(hours / 24)}d ago`;
 }
 
-export function CloudPanel({ cloud, onReset }: { cloud: CloudState | null; onReset: () => void }) {
+export function CloudPanel({ cloud }: { cloud: CloudState | null }) {
   if (!cloud) {
     return <Panel title="Production" icon={<Activity className="h-4 w-4" />}>Loading…</Panel>;
   }
-  const checkoutReleases = cloud.releases["checkout-api"] ?? [];
+  const releaseService = cloud.incident?.service ?? Object.keys(cloud.releases)[0] ?? "";
+  const releases = cloud.releases[releaseService] ?? [];
   return (
     <div className="flex flex-col gap-4">
       <Panel
         title={`${cloud.project.name} · ${cloud.project.environment}`}
         icon={<Activity className="h-4 w-4" />}
-        action={
-          <Button size="sm" variant="ghost" onClick={onReset} title="Put the incident back">
-            <RotateCcw className="h-3.5 w-3.5" /> Reset demo
-          </Button>
-        }
       >
         <p className="mb-3 text-xs text-muted-foreground">
           Simulated cloud · {cloud.overview.region}. {cloud.overview.headline}
@@ -60,8 +55,8 @@ export function CloudPanel({ cloud, onReset }: { cloud: CloudState | null; onRes
               <p className="mt-1 text-xs text-muted-foreground">{s.kind}</p>
               {s.error_rate_percent !== undefined && (
                 <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
-                  <Metric label="errors" value={`${s.error_rate_percent}%`} bad={s.error_rate_percent > 5} />
-                  <Metric label="p95" value={`${s.p95_latency_ms} ms`} bad={(s.p95_latency_ms ?? 0) > 1000} />
+                  <Metric label="errors" value={`${s.error_rate_percent}%`} bad={s.status !== "healthy" && s.error_rate_percent > 5} />
+                  <Metric label="p95" value={`${s.p95_latency_ms} ms`} bad={s.status !== "healthy" && (s.p95_latency_ms ?? 0) > 1000} />
                   <Metric label="req/min" value={`${s.requests_per_min}`} />
                 </div>
               )}
@@ -70,9 +65,9 @@ export function CloudPanel({ cloud, onReset }: { cloud: CloudState | null; onRes
         </ul>
       </Panel>
 
-      <Panel title="checkout-api releases" icon={<GitCommit className="h-4 w-4" />}>
+      <Panel title={`${releaseService} releases`} icon={<GitCommit className="h-4 w-4" />}>
         <ul className="flex flex-col gap-1.5 text-xs">
-          {checkoutReleases.map((r) => (
+          {releases.map((r) => (
             <li key={r.version} className="flex items-baseline gap-2">
               <span className={cn("w-8 font-mono", r.live ? "text-accent" : "text-muted-foreground")}>
                 {r.version}

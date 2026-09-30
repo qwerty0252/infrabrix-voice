@@ -22,14 +22,17 @@ from app.providers.llm.models import CompletionResult, Message, TokenUsage, Tool
 TSchema = TypeVar("TSchema", bound=BaseModel)
 
 _SERVICES = {
-    "checkout": "checkout-api",
-    "payment": "checkout-api",
-    "storefront": "storefront",
-    "website": "storefront",
-    "frontend": "storefront",
-    "database": "orders-db",
-    "postgres": "orders-db",
-    "orders": "orders-db",
+    "transcri": "ria-transcriber",
+    "whisper": "ria-transcriber",
+    "worker": "ria-transcriber",
+    "database": "ria-db",
+    "postgres": "ria-db",
+    "db": "ria-db",
+    "frontend": "ria-web",
+    "web": "ria-web",
+    "site": "ria-web",
+    "api": "ria-api",
+    "backend": "ria-api",
 }
 
 # Ordered: the first matching intent wins.
@@ -66,7 +69,7 @@ _GREETING = re.compile(r"^\s*(hi|hey|hello|yo|good (morning|afternoon|evening))\
 
 def _service(text: str) -> str | None:
     lowered = text.lower()
-    return next((svc for word, svc in _SERVICES.items() if word in lowered), None)
+    return next((svc for word, svc in _SERVICES.items() if re.search(rf"\b{word}", lowered)), None)
 
 
 def plan_tool_call(text: str) -> tuple[str, dict[str, Any]] | None:
@@ -76,13 +79,13 @@ def plan_tool_call(text: str) -> tuple[str, dict[str, Any]] | None:
         if rolls_back or any(w in lowered for w in words):
             service = _service(text)
             if tool == "rollback_release":
-                args: dict[str, Any] = {"service": service or "checkout-api"}
+                args: dict[str, Any] = {"service": service or "ria-api"}
                 version = re.search(r"\bv(?:ersion)?\s*(\d+)\b", lowered)
                 if version:
                     args["to_version"] = f"v{version.group(1)}"
                 return tool, args
             if tool in {"get_recent_errors", "get_service_metrics", "list_releases"}:
-                return tool, {"service": service or "checkout-api"}
+                return tool, {"service": service or "ria-api"}
             if tool == "diagnose_incident":
                 return tool, ({"service": service} if service else {})
             return tool, {}

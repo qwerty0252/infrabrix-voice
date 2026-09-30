@@ -19,6 +19,7 @@ from app.db import Base, engine  # noqa: E402
 from app.main import app  # noqa: E402
 from app.providers.voice import get_voice_provider  # noqa: E402
 from app.providers.voice.base import VoiceToken  # noqa: E402
+from app.ratelimit import limiter  # noqa: E402
 
 
 class FakeVoiceProvider:
@@ -45,6 +46,7 @@ async def client(voice_provider: FakeVoiceProvider) -> AsyncIterator[httpx.Async
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+    limiter.reset()
     app.dependency_overrides[get_voice_provider] = lambda: voice_provider
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:

@@ -5,10 +5,10 @@ from __future__ import annotations
 import uuid
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 
-from app import democloud
+from app import democloud, ratelimit
 from app.agent import voice_approvals
 from app.agent.registry import ToolContext
 from app.agent.runtime import AgentRuntime
@@ -32,12 +32,13 @@ LLMDep = Annotated[LLMProvider, Depends(get_llm_provider)]
 
 
 @router.post("/auth/demo")
-async def demo_sign_in(body: DemoSignIn, session: SessionDep) -> dict[str, Any]:
+async def demo_sign_in(body: DemoSignIn, request: Request, session: SessionDep) -> dict[str, Any]:
     """Create a visitor with a private project and simulated production cloud."""
+    ratelimit.check_signin(request)
     user = User(display_name=body.display_name)
     session.add(user)
     await session.flush()
-    project = Project(owner_id=user.id, name="acme-shop", cloud_state=democloud.seed_state())
+    project = Project(owner_id=user.id, name="ria", cloud_state=democloud.seed_state())
     session.add(project)
     await session.flush()
     conversation = Conversation(project_id=project.id)
@@ -137,6 +138,7 @@ async def send_text_message(
     llm: LLMDep,
 ) -> dict[str, Any]:
     """Typed chat: the same runtime and result contract as a voice turn."""
+    ratelimit.check_turn(user.id)
     conversation = await ConversationRepository(session).get(conversation_id)
     if conversation is None or conversation.project_id != project.id:
         raise NotFoundError("Conversation not found")
